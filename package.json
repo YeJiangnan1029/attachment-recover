@@ -1,24 +1,24 @@
 {
-  "name": "zotero-plugin-template",
+  "name": "attachment_recover",
   "type": "module",
-  "version": "3.1.0",
-  "description": "Zotero Plugin Template",
+  "version": "0.1.0",
+  "description": "Zotero 7 plugin for recovering missing PDF attachments across devices",
   "config": {
-    "addonName": "Zotero Plugin Template",
-    "addonID": "addontemplate@euclpts.com",
-    "addonRef": "addontemplate",
-    "addonInstance": "AddonTemplate",
-    "prefsPrefix": "extensions.zotero.addontemplate"
+    "addonName": "attachment_recover",
+    "addonID": "attachment_recover@local",
+    "addonRef": "attachment_recover",
+    "addonInstance": "AttachmentRecover",
+    "prefsPrefix": "extensions.zotero.attachment_recover"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/windingwind/zotero-plugin-template.git"
+    "url": "git+https://github.com/hx43y/attachment_recover.git"
   },
-  "author": "windingwind",
+  "author": "Jiangnan Ye",
   "bugs": {
-    "url": "https://github.com/windingwind/zotero-plugin-template/issues"
+    "url": "https://github.com/hx43y/attachment_recover/issues"
   },
-  "homepage": "https://github.com/windingwind/zotero-plugin-template#readme",
+  "homepage": "https://github.com/hx43y/attachment_recover#readme",
   "license": "AGPL-3.0-or-later",
   "scripts": {
     "start": "zotero-plugin serve",

@@ -1,11 +1,11 @@
 item-section-example1-head-text =
-    .label = Plugin Template: Item Info
+    .label = Attachment Recover: Item Info
 item-section-example1-sidenav-tooltip =
-    .tooltiptext = This is Plugin Template section (item info)
+    .tooltiptext = Attachment Recover item info pane
 item-section-example2-head-text =
-    .label = Plugin Template: Reader [{$status}]
+    .label = Attachment Recover: Reader [{$status}]
 item-section-example2-sidenav-tooltip =
-    .tooltiptext = This is Plugin Template section (reader)
+    .tooltiptext = Attachment Recover reader pane
 item-section-example2-button-tooltip =
-    .tooltiptext = Unregister this section
-item-info-row-example-label = Example Row
+    .tooltiptext = Remove this pane
+item-info-row-example-label = Attachment Recover example row

@@ -1,12 +1,14 @@
-import {
-  BasicExampleFactory,
-  HelperExampleFactory,
-  KeyExampleFactory,
-  PromptExampleFactory,
-  UIExampleFactory,
-} from "./modules/examples";
 import { getString, initLocale } from "./utils/locale";
-import { registerPrefsScripts } from "./modules/preferenceScript";
+import {
+  runAttachmentRecoverCommand,
+  runScanAndRecoverCommand,
+} from "./modules/recoveryCommand";
+import { createDescriptorsForSelectedItems } from "./modules/recoveryManual";
+import { sha256Hex } from "./modules/recoveryDescriptor";
+import {
+  getRecoveryParentItem,
+  readParentRecoverNotePayload,
+} from "./modules/recoveryNote";
 import { createZToolkit } from "./utils/ztoolkit";
 
 async function onStartup() {
@@ -18,21 +20,8 @@ async function onStartup() {
 
   initLocale();
 
-  BasicExampleFactory.registerPrefs();
-
-  BasicExampleFactory.registerNotifier();
-
-  KeyExampleFactory.registerShortcuts();
-
-  await UIExampleFactory.registerExtraColumn();
-
-  await UIExampleFactory.registerExtraColumnWithCustomCell();
-
-  UIExampleFactory.registerItemPaneCustomInfoRow();
-
-  UIExampleFactory.registerItemPaneSection();
-
-  UIExampleFactory.registerReaderItemPaneSection();
+  registerPrefsPane();
+  registerNotifier();
 
   await Promise.all(
     Zotero.getMainWindows().map((win) => onMainWindowLoad(win)),
@@ -47,50 +36,32 @@ async function onMainWindowLoad(win: _ZoteroTypes.MainWindow): Promise<void> {
   // Create ztoolkit for every window
   addon.data.ztoolkit = createZToolkit();
 
-  win.MozXULElement.insertFTLIfNeeded(
-    `${addon.data.config.addonRef}-mainWindow.ftl`,
-  );
-
-  const popupWin = new ztoolkit.ProgressWindow(addon.data.config.addonName, {
-    closeOnClick: true,
-    closeTime: -1,
-  })
-    .createLine({
-      text: getString("startup-begin"),
-      type: "default",
-      progress: 0,
-    })
-    .show();
-
-  await Zotero.Promise.delay(1000);
-  popupWin.changeLine({
-    progress: 30,
-    text: `[30%] ${getString("startup-begin")}`,
+  ztoolkit.Menu.register("menuTools", {
+    tag: "menuitem",
+    id: `zotero-menu-tools-${addon.data.config.addonRef}`,
+    label: getString("menu-tools-attachment-recover"),
+    commandListener: () => {
+      void runAttachmentRecoverCommand();
+    },
   });
 
-  UIExampleFactory.registerStyleSheet(win);
-
-  UIExampleFactory.registerRightClickMenuItem();
-
-  UIExampleFactory.registerRightClickMenuPopup(win);
-
-  UIExampleFactory.registerWindowMenuWithSeparator();
-
-  PromptExampleFactory.registerNormalCommandExample();
-
-  PromptExampleFactory.registerAnonymousCommandExample(win);
-
-  PromptExampleFactory.registerConditionalCommandExample();
-
-  await Zotero.Promise.delay(1000);
-
-  popupWin.changeLine({
-    progress: 100,
-    text: `[100%] ${getString("startup-finish")}`,
+  ztoolkit.Menu.register("menuTools", {
+    tag: "menuitem",
+    id: `zotero-menu-tools-${addon.data.config.addonRef}-scan`,
+    label: getString("menu-tools-scan-recover"),
+    commandListener: () => {
+      void runScanAndRecoverCommand();
+    },
   });
-  popupWin.startCloseTimer(5000);
+}
 
-  addon.hooks.onDialogEvents("dialogExample");
+function registerPrefsPane() {
+  Zotero.PreferencePanes.register({
+    pluginID: addon.data.config.addonID,
+    src: rootURI + "content/preferences.xhtml",
+    label: getString("prefs-title"),
+    image: `chrome://${addon.data.config.addonRef}/content/icons/favicon.png`,
+  });
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {
@@ -99,6 +70,10 @@ async function onMainWindowUnload(win: Window): Promise<void> {
 }
 
 function onShutdown(): void {
+  if (addon.data.notifierID) {
+    Zotero.Notifier.unregisterObserver(addon.data.notifierID);
+  }
+
   ztoolkit.unregisterAll();
   addon.data.dialog?.window?.close();
   // Remove addon object
@@ -117,17 +92,98 @@ async function onNotify(
   ids: Array<string | number>,
   extraData: { [key: string]: any },
 ) {
-  // You can add your code to the corresponding notify type
-  ztoolkit.log("notify", event, type, ids, extraData);
-  if (
-    event == "select" &&
-    type == "tab" &&
-    extraData[ids[0]].type == "reader"
-  ) {
-    BasicExampleFactory.exampleNotifierCallback();
-  } else {
+  void extraData;
+
+  if (!addon?.data.alive) {
     return;
   }
+
+  if (event !== "add" || type !== "item" || !ids.length) {
+    return;
+  }
+
+  const itemIDs = ids
+    .map((id) => Number(id))
+    .filter((id) => Number.isInteger(id) && id > 0);
+  if (!itemIDs.length) {
+    return;
+  }
+
+  const items = await Zotero.Items.getAsync(itemIDs);
+  const attachments = items.filter(
+    (item) =>
+      item?.isAttachment() && item.isPDFAttachment() && !!item.parentItemID,
+  );
+
+  if (!attachments.length) {
+    return;
+  }
+
+  const newAttachments: Zotero.Item[] = [];
+
+  for (const att of attachments) {
+    const parentItem = await getRecoveryParentItem(att);
+    if (!parentItem) {
+      newAttachments.push(att);
+      continue;
+    }
+
+    const payload = await readParentRecoverNotePayload(parentItem);
+    if (!payload) {
+      newAttachments.push(att);
+      continue;
+    }
+
+    const filePath = await att.getFilePathAsync();
+    if (!filePath) {
+      continue;
+    }
+
+    try {
+      const bytes = await IOUtils.read(filePath);
+      const hash = `sha256:${await sha256Hex(bytes)}`;
+      const already = payload.descriptors.some((d) => d.hash === hash);
+      if (!already) {
+        newAttachments.push(att);
+      }
+    } catch {
+      newAttachments.push(att);
+    }
+  }
+
+  if (!newAttachments.length) {
+    return;
+  }
+
+  try {
+    await createDescriptorsForSelectedItems(newAttachments);
+  } catch (error) {
+    ztoolkit.log("Failed to auto-create recovery descriptors", error);
+  }
+}
+
+function registerNotifier() {
+  if (addon.data.notifierID) {
+    return;
+  }
+
+  addon.data.notifierID = Zotero.Notifier.registerObserver(
+    {
+      notify: async (
+        event: string,
+        type: string,
+        ids: Array<string | number>,
+        extraData: { [key: string]: any },
+      ) => {
+        if (!addon?.data.alive) {
+          return;
+        }
+
+        await addon.hooks.onNotify(event, type, ids, extraData);
+      },
+    },
+    ["item"],
+  );
 }
 
 /**
@@ -137,48 +193,16 @@ async function onNotify(
  * @param data event data
  */
 async function onPrefsEvent(type: string, data: { [key: string]: any }) {
-  switch (type) {
-    case "load":
-      registerPrefsScripts(data.window);
-      break;
-    default:
-      return;
-  }
+  void type;
+  void data;
 }
 
 function onShortcuts(type: string) {
-  switch (type) {
-    case "larger":
-      KeyExampleFactory.exampleShortcutLargerCallback();
-      break;
-    case "smaller":
-      KeyExampleFactory.exampleShortcutSmallerCallback();
-      break;
-    default:
-      break;
-  }
+  void type;
 }
 
 function onDialogEvents(type: string) {
-  switch (type) {
-    case "dialogExample":
-      HelperExampleFactory.dialogExample();
-      break;
-    case "clipboardExample":
-      HelperExampleFactory.clipboardExample();
-      break;
-    case "filePickerExample":
-      HelperExampleFactory.filePickerExample();
-      break;
-    case "progressWindowExample":
-      HelperExampleFactory.progressWindowExample();
-      break;
-    case "vtableExample":
-      HelperExampleFactory.vtableExample();
-      break;
-    default:
-      break;
-  }
+  void type;
 }
 
 // Add your hooks here. For element click, etc.

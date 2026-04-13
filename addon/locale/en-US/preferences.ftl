@@ -1,5 +1,5 @@
-pref-title = Addon Template Example
+pref-title = Attachment Recover Settings
 pref-enable =
-    .label = Enable
-pref-input = Input
-pref-help = { $name } Build { $version } { $time }
+    .label = Enable plugin
+pref-input = Reserved option
+pref-help = { $name } currently exposes a placeholder settings page for future recovery and scan options.

@@ -10,6 +10,7 @@ class Addon {
     // Env type, see build.js
     env: "development" | "production";
     initialized?: boolean;
+    notifierID?: string;
     ztoolkit: ZToolkit;
     locale?: {
       current: any;
