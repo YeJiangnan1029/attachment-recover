@@ -2,7 +2,7 @@
   "name": "attachment_recover",
   "type": "module",
   "version": "0.1.0",
-  "description": "Zotero 7 plugin for recovering missing PDF attachments across devices",
+  "description": "Zotero plugin for recovering missing PDF attachments across devices",
   "config": {
     "addonName": "attachment_recover",
     "addonID": "attachment_recover@local",

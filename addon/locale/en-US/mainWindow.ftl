@@ -1,11 +1,4 @@
-item-section-example1-head-text =
-    .label = Attachment Recover: Item Info
-item-section-example1-sidenav-tooltip =
-    .tooltiptext = Attachment Recover item info pane
-item-section-example2-head-text =
-    .label = Attachment Recover: Reader [{$status}]
-item-section-example2-sidenav-tooltip =
-    .tooltiptext = Attachment Recover reader pane
-item-section-example2-button-tooltip =
-    .tooltiptext = Remove this pane
-item-info-row-example-label = Attachment Recover example row
+item-section-recovery-status-head-text =
+    .label = Attachment Recovery Status
+item-section-recovery-status-sidenav-tooltip =
+    .tooltiptext = View recovery tasks and statuses for the current item

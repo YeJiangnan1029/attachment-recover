@@ -1,11 +1,4 @@
-item-section-example1-head-text =
-    .label = 附件恢复: 条目信息
-item-section-example1-sidenav-tooltip =
-    .tooltiptext = 附件恢复条目信息面板
-item-section-example2-head-text =
-    .label = 附件恢复: 阅读器[{$status}]
-item-section-example2-sidenav-tooltip =
-    .tooltiptext = 附件恢复阅读器面板
-item-section-example2-button-tooltip =
-    .tooltiptext = 移除此面板
-item-info-row-example-label = 附件恢复示例行
+item-section-recovery-status-head-text =
+    .label = 附件恢复状态
+item-section-recovery-status-sidenav-tooltip =
+    .tooltiptext = 查看当前条目的恢复任务和状态

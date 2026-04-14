@@ -1,5 +1,5 @@
 import { AttachmentRecoverDescriptor } from "./recoveryDescriptor";
-import { readParentRecoverNotePayload } from "./recoveryNote";
+import { listParentRecoveryTasks } from "./recoveryTasks";
 
 export interface MissingAttachment {
   parentItem: Zotero.Item;
@@ -14,26 +14,12 @@ export async function scanMissingAttachments(): Promise<MissingAttachment[]> {
   );
 
   for (const parentItem of itemsWithNotes) {
-    const payload = await readParentRecoverNotePayload(parentItem);
-    if (!payload) continue;
+    const tasks = await listParentRecoveryTasks(parentItem);
 
-    for (const descriptor of payload.descriptors) {
+    for (const { descriptor, hasLocalFile } of tasks) {
       if (descriptor.status === "success") continue;
 
-      let found = false;
-      for (const attID of parentItem.getAttachments()) {
-        const att = await Zotero.Items.getAsync(attID);
-        if (!att.isPDFAttachment()) continue;
-        const filePath = await att.getFilePathAsync();
-        if (att.attachmentFilename === descriptor.filename || filePath) {
-          if (filePath) {
-            found = true;
-            break;
-          }
-        }
-      }
-
-      if (!found) {
+      if (!hasLocalFile) {
         results.push({ parentItem, descriptor });
       }
     }

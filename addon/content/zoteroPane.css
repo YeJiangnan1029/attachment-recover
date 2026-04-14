@@ -1,3 +1,109 @@
-.makeItRed {
-  background-color: tomato;
+.attachment-recover-status-panel {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.attachment-recover-status-panel__header {
+  margin-bottom: 10px;
+}
+
+.attachment-recover-status-panel__title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.attachment-recover-status-panel__description,
+.attachment-recover-status-panel__message,
+.attachment-recover-status-panel__row-value {
+  color: var(--fill-secondary);
+  word-break: break-word;
+}
+
+.attachment-recover-status-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.attachment-recover-status-panel__item {
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.attachment-recover-status-panel__item-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.attachment-recover-status-panel__item-title {
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.attachment-recover-status-panel__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.attachment-recover-status-panel__state-icon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.attachment-recover-status-panel__state-icon--downloaded {
+  color: #2f9e44;
+}
+
+.attachment-recover-status-panel__state--downloaded {
+  background: rgba(47, 158, 68, 0.12);
+  color: #2b8a3e;
+}
+
+.attachment-recover-status-panel__state-icon--missing {
+  color: #868e96;
+}
+
+.attachment-recover-status-panel__state--missing {
+  background: rgba(134, 142, 150, 0.14);
+  color: #5c6770;
+}
+
+.attachment-recover-status-panel__state-icon--downloading {
+  color: #1c7ed6;
+}
+
+.attachment-recover-status-panel__state--downloading {
+  background: rgba(28, 126, 214, 0.14);
+  color: #1864ab;
+}
+
+.attachment-recover-status-panel__state-icon--failed {
+  color: #e03131;
+}
+
+.attachment-recover-status-panel__state--failed {
+  background: rgba(224, 49, 49, 0.14);
+  color: #c92a2a;
+}
+
+.attachment-recover-status-panel__row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.attachment-recover-status-panel__row-label {
+  font-weight: 500;
+  color: var(--fill-primary);
 }

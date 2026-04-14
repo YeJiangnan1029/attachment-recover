@@ -1,119 +1,92 @@
 # attachment_recover
 
-[![zotero target version](https://img.shields.io/badge/Zotero-7-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
+[![zotero target](https://img.shields.io/badge/Zotero-Add--on-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
 
-`attachment_recover` 是一个 Zotero 7 插件，用于在多设备之间自动恢复缺失的 PDF 附件。
+`attachment_recover` 是一个 Zotero 插件，用于在多设备之间恢复缺失的 PDF 附件，并且只恢复附件，不创建新的顶层条目。
+
+[English](doc/README-enUS.md)
 
 ## 背景
 
-在公司/学校内网环境下，Zotero Connector 可以正常抓取论文并保存 PDF 附件，但受限于网络策略无法上传到 WebDAV 或 Zotero Storage。当用户在另一台设备上通过数据同步看到条目时，PDF 附件缺失。如果用户再次抓取同一篇论文，又会产生重复条目。
+在公司、学校等受限网络环境中，Zotero Connector 往往可以正常抓取论文元数据和 PDF，但附件文件未必能够上传到 WebDAV 或 Zotero Storage。这样一来，用户在另一台设备上只能看到条目，无法看到 PDF，重复抓取还会带来重复条目。
 
-本插件利用 Zotero 本身的数据同步机制，在条目下创建一份可同步的恢复描述符，在另一台设备上基于描述符自动下载、校验并恢复缺失的 PDF 附件，且绝不创建新的顶层条目。
+本项目利用 Zotero 的数据同步层，将附件恢复所需信息保存为父条目下的插件管理 note。另一台设备同步到这些信息后，可以扫描缺失附件并重新下载、校验、导入回原条目。
 
-## v1.0 功能
+## v1.1 已完成功能
 
 ### 描述符生成
 
-- 为 PDF 附件生成恢复描述符，存储在父条目下的唯一管理 note 中
-- 描述符包含：SHA-256 哈希、文件大小、文件名、MIME 类型、PDF URL、页面 URL、DOI、arXiv ID、来源站点等
-- arXiv ID 会自动从 URL 中提取并保留版本号（如 `2511.13684v1`）
-- PDF URL 和页面 URL 会自动规范化为 https 的 arXiv 标准格式
+- 为 PDF 附件生成恢复描述符，并存储在父条目下唯一的插件管理 note 中
+- 描述符包含哈希、文件大小、文件名、MIME 类型、PDF URL、页面 URL、DOI、arXiv ID、来源站点、恢复状态等信息
+- 自动提取并规范化 arXiv ID、arXiv 页面 URL、arXiv PDF URL
 
 ### 手动补录
 
-- `工具 -> 补录恢复描述符`：为当前选中的条目或附件手动生成描述符
-- 支持多选多个父条目，按父条目分组处理
-- 对已有描述符执行 upsert（保留 createdAt/status/attemptCount/lastError）
+- `工具 -> 补录恢复描述符`
+- 支持选中父条目、PDF 附件、管理 note 后按父条目分组处理
+- 对已有描述符执行 upsert，保留 `createdAt`、`status`、`attemptCount`、`lastError`
 
 ### 自动补录
 
-- 新增 PDF 附件时自动通过 Notifier 触发描述符生成
-- 已存在相同 hash 的描述符时自动跳过，不会重复创建
+- 新增 PDF 附件时通过 Notifier 自动补录描述符
+- 已存在相同哈希的描述符时自动跳过，避免重复记录
 
 ### 扫描与恢复
 
-- `工具 -> 扫描并恢复缺失附件`：扫描整个文献库
-- 找出有恢复描述符但本地缺失对应 PDF 的条目
-- 确认对话框列出缺失项，用户确认后逐个下载恢复
-- 恢复流程：解析下载 URL → 下载到临时文件 → SHA-256 校验 → 导入为 stored attachment → 重命名 → 更新描述符状态
-- MVP 阶段优先支持 arXiv PDF URL
-- 下载失败时描述符状态更新为 `failed` 并记录错误信息
-- 恢复成功后描述符状态更新为 `success`
+- `工具 -> 扫描并恢复缺失附件`
+- 扫描用户文库中带恢复描述符但本地缺失 PDF 的条目
+- 先弹出确认框，再逐项执行恢复
+- 恢复流程：解析下载 URL -> 下载临时文件 -> SHA-256 校验 -> 导入为 stored attachment -> 重命名 -> 更新描述符状态
+- 当前优先支持 arXiv 来源
+
+### 状态面板
+
+- 在条目右侧面板显示当前父条目下的恢复任务
+- 显示字段：文件名、状态、来源、最后更新时间、报错信息
+- 状态包含：`已下载`、`缺失`、`下载中`、`恢复失败`
+- 使用项目自定义 SVG 图标和高亮状态样式
+
+### 中文化 UI
+
+- 菜单、确认框、状态面板等用户可见文本默认使用中文
 
 ## 安装
 
-从 [Releases](../../releases) 下载 `.xpi` 文件，在 Zotero 中通过 `工具 -> 插件 -> Install Add-on From File` 安装。
+从仓库 Releases 页面下载 `.xpi` 文件，在 Zotero 中通过 `工具 -> 插件 -> Install Add-on From File` 安装。
 
-## 使用方法
+## 使用方式
 
 ### 补录恢复描述符
 
-1. 在 Zotero 中选中一个或多个包含 PDF 附件的条目
+1. 在 Zotero 中选中一个或多个条目、PDF 附件或管理 note
 2. 点击 `工具 -> 补录恢复描述符`
-3. 插件会为每个 PDF 附件生成描述符并写入管理 note
-4. 同步后，另一台设备即可看到这些描述符
+3. 插件会为对应父条目下的 PDF 生成或更新恢复描述符
+4. 同步后，其他设备即可读取这些描述符
 
 ### 扫描并恢复缺失附件
 
 1. 点击 `工具 -> 扫描并恢复缺失附件`
-2. 插件扫描文献库，列出有描述符但本地缺失 PDF 的条目
-3. 确认后自动下载、校验并挂回原条目
+2. 插件扫描整个用户文库中的缺失附件任务
+3. 确认后自动尝试恢复并更新状态
 
-### 自动补录
+### 查看状态面板
 
-- 当添加新的 PDF 附件时，插件会自动生成描述符并写入管理 note
-- 无需手动操作
+1. 在 Zotero 中选中条目、附件或管理 note
+2. 查看右侧 `附件恢复状态` 面板
+3. 面板会展示当前父条目下的恢复任务列表
 
-## 描述符格式
+## 相关文档
 
-```json
-{
-  "type": "attachment_recover",
-  "version": 1,
-  "descriptors": [
-    {
-      "id": "sha256:<hex>",
-      "version": 1,
-      "pdfURL": "https://arxiv.org/pdf/2404.03575v2.pdf",
-      "pageURL": "https://arxiv.org/abs/2404.03575v2",
-      "doi": "10.xxxx/xxxxx",
-      "arxivId": "2404.03575v2",
-      "sourceSite": "arxiv",
-      "hash": "sha256:<hex>",
-      "filesize": 10799460,
-      "filename": "Author - 2024 - Paper Title.pdf",
-      "mimeType": "application/pdf",
-      "createdAt": 1776117047574,
-      "updatedAt": 1776117047574,
-      "status": "pending | downloading | success | failed",
-      "attemptCount": 0,
-      "lastError": null,
-      "pluginVersion": "0.1.0"
-    }
-  ]
-}
-```
-
-## 项目结构
-
-```
-src/modules/
-  recoveryDescriptor.ts   # 描述符类型定义、创建、upsert、arXiv URL 规范化
-  recoveryNote.ts         # 管理 note 的读写、序列化、查找
-  recoveryManual.ts       # 手动补录逻辑（多选多父条目分组处理）
-  recoveryScanner.ts      # 缺失附件扫描器
-  recoveryDownloader.ts   # 下载 URL 解析、PDF 下载、哈希校验
-  recoveryExecutor.ts      # 恢复任务执行（下载→校验→导入→状态更新）
-  recoveryCommand.ts       # 菜单命令入口
-src/hooks.ts              # 插件生命周期、Notifier 自动补录
-```
+- English README: [doc/README-enUS.md](doc/README-enUS.md)
+- 需求与架构说明: [project_requirements.md](project_requirements.md)
+- Release Notes v1.1: [doc/release-v1.1.md](doc/release-v1.1.md)
 
 ## 开发
 
 ```bash
 npm install
 npm run build
-npm run start    # 开发模式
+npm run start
 ```
 
 ## 许可证
